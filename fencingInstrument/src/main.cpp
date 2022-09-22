@@ -17,6 +17,8 @@
 /** Offset position (minimun and maximum distance) in cm */
 #define OFFSET_POS 30
 
+#define MAX_DIFF  100
+
 // Lidar sensor object
 TFMiniS tfmini;
 /** 
@@ -74,10 +76,10 @@ void loop()
     measurement = tfmini.getMeasurement();
     #ifdef DEBUG
       Serial.print("Dist: ");
-      Serial.println(measurement.distance);
-      /*Serial.print(" Strength: ");
-      Serial.print(measurement.strength);
-      Serial.print(" Temperature: ");
+      Serial.print(measurement.distance);
+      Serial.print(" Strength: ");
+      Serial.println(measurement.strength);
+      /*Serial.print(" Temperature: ");
       Serial.println(measurement.temperature);*/
     #endif
   }
@@ -90,26 +92,29 @@ void loop()
       if (((measurement.distance - HYST_CM) >= last_distance) or
           ((measurement.distance + HYST_CM) <= last_distance))
       {
-        uint8_t last_position_note = (uint8_t)(last_distance / 100);
-        uint8_t new_position_note = (uint8_t)(measurement.distance / 100);
-        uint16_t distance = (uint16_t) (abs(last_distance - measurement.distance));
-        uint8_t velocity = (uint8_t) (map(distance, HYST_CM, 100, 64, 127));
+        if (abs(measurement.distance - last_distance) > MAX_DIFF)
+        {
+          uint8_t last_position_note = (uint8_t)(last_distance / 100);
+          uint8_t new_position_note = (uint8_t)(measurement.distance / 100);
+          uint16_t distance = (uint16_t) (abs(last_distance - measurement.distance));
+          uint8_t velocity = (uint8_t) (map(distance, HYST_CM, 100, 64, 127));
 
-      #ifdef DEBUG
-        Serial.print("Position note: ");
-        Serial.print(new_position_note);
-        Serial.print(", Velocity note: ");
-        Serial.println(velocity);
-      #endif
-      #ifndef NO_MIDI
-        noteOn(MIDI_CHANNEL, notePitches[new_position_note], velocity);
-        if (last_position_note != new_position_note) {
-          noteOff(MIDI_CHANNEL, notePitches[last_position_note], 0);
+        #ifdef DEBUG
+          Serial.print("Position note: ");
+          Serial.print(new_position_note);
+          Serial.print(", Velocity note: ");
+          Serial.println(velocity);
+        #endif
+        #ifndef NO_MIDI
+          noteOn(MIDI_CHANNEL, notePitches[new_position_note], velocity);
+          if (last_position_note != new_position_note) {
+            noteOff(MIDI_CHANNEL, notePitches[last_position_note], 0);
+          }
+          // Send MIDI data to USB
+          MidiUSB.flush();
+        #endif
+          last_distance = measurement.distance;
         }
-        // Send MIDI data to USB
-        MidiUSB.flush();
-      #endif
-        last_distance = measurement.distance;
       }
     }
   }
