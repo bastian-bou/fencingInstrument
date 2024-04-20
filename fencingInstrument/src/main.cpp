@@ -2,8 +2,8 @@
  * @file main.cpp
  * @author B. Bouchardon
  * @brief 
- * @version 0.1
- * @date 2022-09-21
+ * @version 2.0
+ * @date 2024-03-15
  * 
  */
 #include "main.h"
@@ -12,54 +12,44 @@
 #define FRAME_RATE_MS 100
 /** Midi channel to communicate on USB */
 #define MIDI_CHANNEL 0
-/** Distance hysteresis (cm) */
-#define HYST_CM 10
-/** Offset position (minimun and maximum distance) in cm */
-#define OFFSET_POS 30
 
-#define MAX_DIFF  100
-
-// Lidar sensor object
-TFMiniS tfmini;
 /** 
  * Serial interface object
  * 10 = RX, 11 = TX
  */
-SoftwareSerial mySerial(10, 11);
+//SoftwareSerial mySerial(10, 11);
+
+lidar sensor_0(10, 11, 100);
+lidar sensor_1(8, 9, 100);
+lidar sensor_2(16, 17, 100);
 
 //LedStatus ledBoard(LED_BUILTIN);
 
 void setup()
 {
-  // Initialise structure
-  measurement.distance = 0;
-  measurement.strength = 0;
-  measurement.temperature = 0;
-
-  last_distance = 0;
-
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+
 #ifdef DEBUG
   // Step 1: Initialize hardware serial port (serial debug port)
   Serial.begin(9600);
   // wait for serial port to connect. Needed for native USB port only
   while (!Serial);
      
-  Serial.println("Initializing...");
+  DEBUG_PRINTLN("Initializing...");
 
 #endif
 
-  // Step 2: Initialize the data rate for the SoftwareSerial port
-  mySerial.begin(TFMINIS_BAUDRATE);
+  // Initialise
+  for (uint8_t i = 0; i < SENSOR_NUMBER; i++)
+  {
+    current_distance[i] = 0;
+  }
+  sensor_0.begin();
+  sensor_1.begin();
+  sensor_2.begin();
 
-  // Step 3: Initialize the TF Mini sensor
-  tfmini.begin(&mySerial);
-
-  // 10Hz to refesh value
-  tfmini.setFrameRate(10);
-
-  tfmini.saveSettings();
+  DEBUG_PRINTLN("Initialized");
 }
 
 
@@ -67,91 +57,89 @@ void loop()
 {
   static uint32_t lastMillis = 0;
   uint32_t currentMillis = millis();
+  uint8_t whichDistanceUpdated = 255;
   
   //ledBoard.updateStatus();
   // Wait some time before taking the next measurement. Match this with your frame rate.
   if ((currentMillis - lastMillis) >= FRAME_RATE_MS)
   {
     lastMillis = currentMillis;
-    measurement = tfmini.getMeasurement();
-    #ifdef DEBUG
-      Serial.print("Dist: ");
-      Serial.print(measurement.distance);
-      Serial.print(" Strength: ");
-      Serial.println(measurement.strength);
-      /*Serial.print(" Temperature: ");
-      Serial.println(measurement.temperature);*/
-    #endif
-  }
-
-  if (measurement.distance != last_distance)
-  {
-    if ((measurement.distance >= OFFSET_POS) and
-        (measurement.distance <= MAX_LENGHT_CM + OFFSET_POS))
-    {
-      if (((measurement.distance - HYST_CM) >= last_distance) or
-          ((measurement.distance + HYST_CM) <= last_distance))
-      {
-        if (abs(measurement.distance - last_distance) > MAX_DIFF)
-        {
-          uint8_t last_position_note = (uint8_t)(last_distance / 100);
-          uint8_t new_position_note = (uint8_t)(measurement.distance / 100);
-          uint16_t distance = (uint16_t) (abs(last_distance - measurement.distance));
-          uint8_t velocity = (uint8_t) (map(distance, HYST_CM, 100, 64, 127));
-
-        #ifdef DEBUG
-          Serial.print("Position note: ");
-          Serial.print(new_position_note);
-          Serial.print(", Velocity note: ");
-          Serial.println(velocity);
-        #endif
-        #ifndef NO_MIDI
-          noteOn(MIDI_CHANNEL, notePitches[new_position_note], velocity);
-          if (last_position_note != new_position_note) {
-            noteOff(MIDI_CHANNEL, notePitches[last_position_note], 0);
-          }
-          // Send MIDI data to USB
-          MidiUSB.flush();
-        #endif
-          last_distance = measurement.distance;
-        }
-      }
+    // Update sensor 0 distance
+    current_distance[0] = sensor_0.get_n_compute();
+    if (sensor_0.is_dist_updated) {
+      whichDistanceUpdated = 0;
+    }
+    // Update sensor 1 distance
+    current_distance[1] = sensor_1.get_n_compute();
+    if (sensor_1.is_dist_updated) {
+      whichDistanceUpdated = 1;
+    }
+    // Update sensor 2 distance
+    current_distance[2] = sensor_2.get_n_compute();
+    if (sensor_2.is_dist_updated) {
+      whichDistanceUpdated = 2;
     }
   }
+
+  if (whichDistanceUpdated != 255)
+  {
+    // At least, two distances are identical, take this distance as the new true one
+    if ((current_distance[0] == current_distance[1]) || (current_distance[0] == current_distance[2])
+        || (current_distance[1] == current_distance[2]))
+    {
+      uint16_t lidarDistance = (current_distance[0] == current_distance[1]) ? current_distance[0] :
+          (current_distance[0] == current_distance[2]) ? current_distance[0] : current_distance[2];
+      play_note(lidarDistance);
+    }
+    else if (abs(current_distance[whichDistanceUpdated] - last_distance) > MAX_DIFF)
+    {
+      play_note(current_distance[whichDistanceUpdated]);
+    }
+  }
+
 
   /*if (measurement.temperature > 70) {
     ledBoard.setRowDurationError(error_type::LIDAR_TEMP_TOO_HIGH);
   } else {
     ledBoard.setRowDurationError(error_type::NO_ERROR);
   }*/
+}
 
+void play_note(uint16_t newDistance)
+{
+  uint8_t lastPositionNote = (uint8_t)(last_distance / 100);
+  uint8_t newPositionNote = (uint8_t)(newDistance / 100);
+  uint16_t distance = (uint16_t) (abs(last_distance - newDistance));
+  uint8_t velocity = (uint8_t) (map(distance, HYST_CM, 100, 64, 127));
+
+  DEBUG_PRINT("Position note: ");
+  DEBUG_PRINT(newPositionNote);
+  DEBUG_PRINT(", Velocity note: ");
+  DEBUG_PRINTLN(velocity);
+  #ifndef NO_MIDI
+    note_on(MIDI_CHANNEL, notePitches[newPositionNote], velocity);
+    if (lastPositionNote != newPositionNote) {
+      note_off(MIDI_CHANNEL, notePitches[lastPositionNote], 0);
+    }
+    // Send MIDI data to USB
+    MidiUSB.flush();
+  #endif
+
+  last_distance = newDistance;
 }
 
 #ifndef NO_MIDI
-/**
- * @brief Set a MIDI note
- * 
- * @param channel channel number to communicate
- * @param pitch note to play
- * @param velocity the force with which you press the note
- */
-void noteOn(byte channel, byte pitch, byte velocity)
+
+void note_on(byte channel, byte pitch, byte velocity)
 {
   midiEventPacket_t noteOn = {0x09, (uint8_t)(0x90 | channel), pitch, velocity};
   MidiUSB.sendMIDI(noteOn);
 }
 
-/**
- * @brief Unset a MIDI note
- * 
- * @param channel channel number to communicate
- * @param pitch note to unplay
- * @param velocity the force with which you press the note (not mandatory)
- */
-void noteOff(byte channel, byte pitch, byte velocity)
+
+void note_off(byte channel, byte pitch, byte velocity)
 {
   midiEventPacket_t noteOff = {0x08, (uint8_t)(0x80 | channel), pitch, velocity};
   MidiUSB.sendMIDI(noteOff);
 }
-
 #endif

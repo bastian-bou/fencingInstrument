@@ -1,0 +1,3 @@
+[submodule "Hardware/arduino_micro_shield"]
+	path = Hardware/arduino_micro_shield
+	url = https://github.com/adamf/arduino_micro_shield.git
