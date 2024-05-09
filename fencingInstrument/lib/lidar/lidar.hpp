@@ -11,8 +11,7 @@
 #define LIDAR_H
 
 #include <Arduino.h>
-#include "TFMiniS.h"
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...)   Serial.print(__VA_ARGS__)
@@ -31,24 +30,30 @@
 
 #define MAX_DIFF  100
 
+#define CMD1 A4
+#define CMD2 A5
+#define COM_LIDAR_OFF 254
+
+#define LIDAR_NUMBER 3
+
+#define HEADER 0x59 //frame header of data package
+#define TIMEOUT_GET_DIST 30
+
 
 class lidar
 {
 
 
 public:
-    uint16_t distance;
-    uint16_t strength;
-    uint16_t temperature;
-    bool     is_dist_updated;
+    uint16_t m_distance[LIDAR_NUMBER];
+    uint16_t m_last_choosed_dist;
+    bool     m_is_dist_updated[LIDAR_NUMBER];
 
     /**
      * @brief Constructor
-     * @param[in] rxPin Receive UART pin
-     * @param[in] txPin Transmit UART pin
      * @param[in] frameRate Number of measurement per seconds (default 10Hz), O if you want to trigger yourself
     */
-    lidar(uint16_t rxPin, uint16_t txPin, uint16_t frameRate = 10);
+    lidar(uint16_t frameRate = 10);
 
     /**
      * @brief Destructor
@@ -61,7 +66,7 @@ public:
      * @brief Trigger lidar
      * @return True if the distance is updated since the last call or False if it is not
     */
-    bool trigger_n_compute();
+    uint16_t trigger_n_compute();
 
     /**
      * @brief Get values from lidar
@@ -70,17 +75,27 @@ public:
     uint16_t get_n_compute();
 
 private:
-    SoftwareSerial *m_serial;
-    TFMiniS m_tfmini;
 
     uint16_t m_framerate;
 
     /**
      * @brief Compute new values
-     * @param[in] measure Struct of distance, strength and temperature
-     * @return New distance or last saved
+     * @param[in] newDistance New distance from one LIDAR
+     * @param[in] index Index of the value in the member tab for lidars
     */
-    uint16_t compute(Measurement newMeasure);
+    void compute(uint16_t newDistance, uint8_t index);
+
+    /**
+     * @brief Switch the UART on a specific lidar
+     * @param[in] lidarNumber Number of the sensor (0, 1, 2)
+    */
+    void switch_lidar(uint8_t lidarNumber);
+
+    /**
+     * @brief Choose the new true distance from the 3 sensors
+     * @return The new real distance in cm or UINT16_MAX
+    */
+    uint16_t choose_distance();
 };
 
 

@@ -13,15 +13,7 @@
 /** Midi channel to communicate on USB */
 #define MIDI_CHANNEL 0
 
-/** 
- * Serial interface object
- * 10 = RX, 11 = TX
- */
-//SoftwareSerial mySerial(10, 11);
-
-lidar sensor_0(10, 11, 100);
-lidar sensor_1(8, 9, 100);
-lidar sensor_2(16, 17, 100);
+lidar sensors(100);
 
 //LedStatus ledBoard(LED_BUILTIN);
 
@@ -41,13 +33,7 @@ void setup()
 #endif
 
   // Initialise
-  for (uint8_t i = 0; i < SENSOR_NUMBER; i++)
-  {
-    current_distance[i] = 0;
-  }
-  sensor_0.begin();
-  sensor_1.begin();
-  sensor_2.begin();
+  sensors.begin();
 
   DEBUG_PRINTLN("Initialized");
 }
@@ -55,47 +41,15 @@ void setup()
 
 void loop()
 {
-  static uint32_t lastMillis = 0;
-  uint32_t currentMillis = millis();
-  uint8_t whichDistanceUpdated = 255;
   
   //ledBoard.updateStatus();
   // Wait some time before taking the next measurement. Match this with your frame rate.
-  if ((currentMillis - lastMillis) >= FRAME_RATE_MS)
-  {
-    lastMillis = currentMillis;
-    // Update sensor 0 distance
-    current_distance[0] = sensor_0.get_n_compute();
-    if (sensor_0.is_dist_updated) {
-      whichDistanceUpdated = 0;
-    }
-    // Update sensor 1 distance
-    current_distance[1] = sensor_1.get_n_compute();
-    if (sensor_1.is_dist_updated) {
-      whichDistanceUpdated = 1;
-    }
-    // Update sensor 2 distance
-    current_distance[2] = sensor_2.get_n_compute();
-    if (sensor_2.is_dist_updated) {
-      whichDistanceUpdated = 2;
-    }
+  uint16_t newDistance = sensors.get_n_compute();
+  if (newDistance != UINT16_MAX) {
+    play_note(newDistance);
   }
-
-  if (whichDistanceUpdated != 255)
-  {
-    // At least, two distances are identical, take this distance as the new true one
-    if ((current_distance[0] == current_distance[1]) || (current_distance[0] == current_distance[2])
-        || (current_distance[1] == current_distance[2]))
-    {
-      uint16_t lidarDistance = (current_distance[0] == current_distance[1]) ? current_distance[0] :
-          (current_distance[0] == current_distance[2]) ? current_distance[0] : current_distance[2];
-      play_note(lidarDistance);
-    }
-    else if (abs(current_distance[whichDistanceUpdated] - last_distance) > MAX_DIFF)
-    {
-      play_note(current_distance[whichDistanceUpdated]);
-    }
-  }
+  Serial.println("");
+  delay(10);
 
 
   /*if (measurement.temperature > 70) {
@@ -107,9 +61,9 @@ void loop()
 
 void play_note(uint16_t newDistance)
 {
-  uint8_t lastPositionNote = (uint8_t)(last_distance / 100);
+  uint8_t lastPositionNote = (uint8_t)(sensors.m_last_choosed_dist / 100);
   uint8_t newPositionNote = (uint8_t)(newDistance / 100);
-  uint16_t distance = (uint16_t) (abs(last_distance - newDistance));
+  uint16_t distance = (uint16_t) (abs(sensors.m_last_choosed_dist - newDistance));
   uint8_t velocity = (uint8_t) (map(distance, HYST_CM, 100, 64, 127));
 
   DEBUG_PRINT("Position note: ");
@@ -125,7 +79,7 @@ void play_note(uint16_t newDistance)
     MidiUSB.flush();
   #endif
 
-  last_distance = newDistance;
+  sensors.m_last_choosed_dist = newDistance;
 }
 
 #ifndef NO_MIDI

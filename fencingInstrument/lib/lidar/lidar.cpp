@@ -8,15 +8,15 @@
 #include <lidar.hpp>
 
 
-
-lidar::lidar(uint16_t rxPin, uint16_t txPin, uint16_t frameRate)
+lidar::lidar(uint16_t frameRate)
 {
-    distance = strength = temperature = 0;
-    is_dist_updated = false;
+    for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
+        m_distance[i] = 0;
+        m_is_dist_updated[i] = false;
+    }
+    m_last_choosed_dist = 0;
 
     m_framerate = frameRate;
-
-    m_serial = new SoftwareSerial(rxPin, txPin);
 }
 
 lidar::~lidar()
@@ -26,87 +26,150 @@ lidar::~lidar()
 void lidar::begin()
 {
     // Initialize serial port through SoftwareSerial
-    m_serial->begin(TFMINIS_BAUDRATE);
+    Serial1.begin(115200);
+    Serial1.setTimeout(200);
 
-    while(!m_serial);
+    while(!Serial1);
 
-    // Initialize TF mini S
-    m_tfmini.begin(m_serial);
-    DEBUG_PRINTLN("m_tfmini.begin done!");
-    // 10Hz to refesh value
-    m_tfmini.setFrameRate(m_framerate);
-    DEBUG_PRINTLN("m_tfmini.setFrameRate to "+ String(m_framerate) + " done!");
-    m_tfmini.saveSettings();
-    DEBUG_PRINTLN("Setting saved !");
+    // Initialize cmd pin CMD1 and CMD2
+    pinMode(CMD1, OUTPUT);
+    pinMode(CMD2, OUTPUT);
+
+    switch_lidar(COM_LIDAR_OFF);
+
+    /*for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
+        switch_lidar(i);
+        // 10Hz to refesh value
+        m_tfmini.setFrameRate(m_framerate);
+        DEBUG_PRINTLN("Set framerate of " + String(i) + " to "+ String(m_framerate) + "Hz done!");
+        m_tfmini.saveSettings();
+        DEBUG_PRINTLN("Setting saved !");
+    }*/
 }
 
-bool lidar::trigger_n_compute()
+uint16_t lidar::trigger_n_compute()
 {
-    Measurement newMeasure = m_tfmini.triggerMeasurement();
-    DEBUG_PRINTLN("New value " + String(newMeasure.distance));
-    compute(newMeasure);
-    return is_dist_updated;
+    /*for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
+        switch_lidar(i);
+        compute(newMeasure, i);
+    }*/
+    return choose_distance();
 }
 
 uint16_t lidar::get_n_compute()
 {
-    int check;                    //save check value
-    int i;
-    int uart[9];                   //save data measured by LiDAR
-    const int HEADER = 0x59;      //frame header of data package
-    Measurement newMeasure;
-    newMeasure.temperature = 0;
-    newMeasure.distance = distance;
-    newMeasure.strength = strength;
+    uint8_t uart[9] = {0}; //save data measured by LiDAR
 
-    if (m_serial->available())                //check if serial port has data input
-    {
-        if (m_serial->read() == HEADER)        //assess data package frame header 0x59
-        {
-            uart[0] = HEADER;
-            if (m_serial->read() == HEADER)      //assess data package frame header 0x59
-            {
-                uart[1] = HEADER;
-                for (i = 2; i < 9; i++)         //save data in array
-                {
-                    uart[i] = m_serial->read();
-                }
-                check = uart[0] + uart[1] + uart[2] + uart[3] + uart[4] + uart[5] + uart[6] + uart[7];
+    for (uint8_t index = 0; index < LIDAR_NUMBER; index++) {
+        switch_lidar(COM_LIDAR_OFF);
+        // Flush receive buffer before switching on a sensor
+        while(Serial1.available()) Serial1.read();
+        switch_lidar(index);
+        if (Serial1.readBytes(uart, 9) > 0) {
+            if (uart[0] == HEADER && uart[1] == HEADER) {
+                uint16_t check = uart[0] + uart[1] + uart[2] + uart[3] + uart[4] + uart[5] + uart[6] + uart[7];
                 if (uart[8] == (check & 0xff))        //verify the received data as per protocol
                 {
-                    newMeasure.distance = uart[2] + uart[3] * 256;     //calculate distance value
-                    newMeasure.strength = uart[4] + uart[5] * 256; //calculate signal strength value
+                    uint16_t dist = uart[2] + (uart[3] << 8);     //calculate distance value
+                    compute(dist, index);
                 }
+            } else {
+                DEBUG_PRINT("#");
+                DEBUG_PRINT(index);
+                DEBUG_PRINTLN(": No HEADER detected");
             }
+        } else {
+            DEBUG_PRINT("#");
+            DEBUG_PRINT(index);
+            DEBUG_PRINTLN(": ERROR during readBytes");
         }
     }
-    return compute(newMeasure);
+    switch_lidar(COM_LIDAR_OFF);
+    return choose_distance();
 }
 
-uint16_t lidar::compute(Measurement newMeasure)
+void lidar::compute(uint16_t newDistance, uint8_t index)
 {
     bool isUpdated = false;
-    DEBUG_PRINT(newMeasure.distance);
-    DEBUG_PRINT("cm, strength ");
-    DEBUG_PRINTLN(newMeasure.strength);
+    DEBUG_PRINT("#");
+    DEBUG_PRINT(index);
+    DEBUG_PRINT(": ");
+    DEBUG_PRINT(newDistance);
+    DEBUG_PRINTLN(" cm");
+
+    uint16_t lastDistance = m_distance[index];
     
-    if (newMeasure.distance != distance)
+    if (newDistance != lastDistance)
     {
-        if ((newMeasure.distance >= OFFSET_POS)
-            and (newMeasure.distance <= MAX_LENGHT_CM + OFFSET_POS))
+        if ((newDistance >= OFFSET_POS)
+            and (newDistance <= MAX_LENGHT_CM + OFFSET_POS))
         {
-            if (((newMeasure.distance - HYST_CM) >= distance)
-                or ((newMeasure.distance + HYST_CM) <= distance))
+            if (((newDistance - HYST_CM) >= lastDistance)
+                or ((newDistance + HYST_CM) <= lastDistance))
             {
                 // TODO: Remove this if it's not necessary in the class, maybe directly in the main.cpp
-                /*if (abs(newMeasure.distance - distance) > MAX_DIFF)
+                /*if (abs(newDistance - distance) > MAX_DIFF)
                 {
                 }*/
-                distance = newMeasure.distance;
+                m_distance[index] = newDistance;
                 isUpdated = true;
             }
         }
     }
-    is_dist_updated = isUpdated;
-    return distance;
+    m_is_dist_updated[index] = isUpdated;
+}
+
+uint16_t lidar::choose_distance()
+{
+    uint8_t whichDistanceUpdated = 255;
+
+    for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
+        if (m_is_dist_updated[i]) whichDistanceUpdated = i;
+    }
+
+    if (whichDistanceUpdated != 255) {
+        // At least, two distances are identical, take this distance as the new true one
+        if ((m_distance[0] == m_distance[1]) || (m_distance[0] == m_distance[2])
+            || (m_distance[1] == m_distance[2]))
+        {
+            return (m_distance[0] == m_distance[1]) ? m_distance[0] :
+                (m_distance[0] == m_distance[2]) ? m_distance[0] : m_distance[2];
+
+        }
+        else if (abs(m_distance[whichDistanceUpdated] - m_last_choosed_dist) > MAX_DIFF)
+        {
+            return m_distance[whichDistanceUpdated];
+        }
+    }
+
+    return UINT16_MAX;
+}
+
+void lidar::switch_lidar(uint8_t lidarNumber)
+{
+    switch (lidarNumber)
+    {
+    case 0:
+        digitalWrite(CMD1, HIGH);
+        digitalWrite(CMD2, LOW);
+        break;
+    case 1:
+        digitalWrite(CMD1, LOW);
+        digitalWrite(CMD2, HIGH);
+        break;
+    case 2:
+        digitalWrite(CMD1, HIGH);
+        digitalWrite(CMD2, HIGH);
+        break;
+
+    case COM_LIDAR_OFF:
+        digitalWrite(CMD1, LOW);
+        digitalWrite(CMD2, LOW);
+        break;
+    
+    default:
+        DEBUG_PRINT("Error on lidar number: ");
+        DEBUG_PRINTLN(lidarNumber);
+        break;
+    }
 }
