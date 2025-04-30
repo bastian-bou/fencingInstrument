@@ -1,9 +1,9 @@
 /**
+ * @file lidar.cpp
  * @author Bastian Bouchardon
  * @date 01/03/2024
  * @version 1.0
 */
-
 
 #include <lidar.hpp>
 
@@ -36,24 +36,6 @@ void lidar::begin()
     pinMode(CMD2, OUTPUT);
 
     switch_lidar(COM_LIDAR_OFF);
-
-    /*for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
-        switch_lidar(i);
-        // 10Hz to refesh value
-        m_tfmini.setFrameRate(m_framerate);
-        DEBUG_PRINTLN("Set framerate of " + String(i) + " to "+ String(m_framerate) + "Hz done!");
-        m_tfmini.saveSettings();
-        DEBUG_PRINTLN("Setting saved !");
-    }*/
-}
-
-uint16_t lidar::trigger_n_compute()
-{
-    /*for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
-        switch_lidar(i);
-        compute(newMeasure, i);
-    }*/
-    return choose_distance();
 }
 
 uint16_t lidar::get_n_compute()
@@ -64,24 +46,32 @@ uint16_t lidar::get_n_compute()
         switch_lidar(COM_LIDAR_OFF);
         // Flush receive buffer before switching on a sensor
         while(Serial1.available()) Serial1.read();
+
         switch_lidar(index);
         if (Serial1.readBytes(uart, 9) > 0) {
             if (uart[0] == HEADER && uart[1] == HEADER) {
                 uint16_t check = uart[0] + uart[1] + uart[2] + uart[3] + uart[4] + uart[5] + uart[6] + uart[7];
-                if (uart[8] == (check & 0xff))        //verify the received data as per protocol
+                if (uart[8] == (check & 0xff)) //verify the checksum
                 {
-                    uint16_t dist = uart[2] + (uart[3] << 8);     //calculate distance value
+                    uint16_t dist = uart[2] + (uart[3] << 8); //calculate distance value
                     compute(dist, index);
                 }
             } else {
                 DEBUG_PRINT("#");
                 DEBUG_PRINT(index);
                 DEBUG_PRINTLN(": No HEADER detected");
+                for (uint8_t i = 0; i < 9; i++) {
+                    DEBUG_PRINT(uart[i], HEX);
+                }
+                DEBUG_PRINTLN("");
+                m_is_dist_updated[index] = false;
             }
         } else {
             DEBUG_PRINT("#");
             DEBUG_PRINT(index);
             DEBUG_PRINTLN(": ERROR during readBytes");
+            m_is_dist_updated[index] = false;
+
         }
     }
     switch_lidar(COM_LIDAR_OFF);
@@ -91,13 +81,13 @@ uint16_t lidar::get_n_compute()
 void lidar::compute(uint16_t newDistance, uint8_t index)
 {
     bool isUpdated = false;
+    uint16_t lastDistance = m_distance[index];
+
     DEBUG_PRINT("#");
     DEBUG_PRINT(index);
     DEBUG_PRINT(": ");
     DEBUG_PRINT(newDistance);
     DEBUG_PRINTLN(" cm");
-
-    uint16_t lastDistance = m_distance[index];
     
     if (newDistance != lastDistance)
     {
@@ -107,10 +97,6 @@ void lidar::compute(uint16_t newDistance, uint8_t index)
             if (((newDistance - HYST_CM) >= lastDistance)
                 or ((newDistance + HYST_CM) <= lastDistance))
             {
-                // TODO: Remove this if it's not necessary in the class, maybe directly in the main.cpp
-                /*if (abs(newDistance - distance) > MAX_DIFF)
-                {
-                }*/
                 m_distance[index] = newDistance;
                 isUpdated = true;
             }
@@ -121,13 +107,13 @@ void lidar::compute(uint16_t newDistance, uint8_t index)
 
 uint16_t lidar::choose_distance()
 {
-    uint8_t whichDistanceUpdated = 255;
+    uint8_t whichDistanceUpdated = UINT8_MAX;
 
-    for (uint8_t i = 0; i < LIDAR_NUMBER; i++) {
-        if (m_is_dist_updated[i]) whichDistanceUpdated = i;
+    for (uint8_t index = 0; index < LIDAR_NUMBER; index++) {
+        if (m_is_dist_updated[index]) whichDistanceUpdated = index;
     }
 
-    if (whichDistanceUpdated != 255) {
+    if (whichDistanceUpdated != UINT8_MAX) {
         // At least, two distances are identical, take this distance as the new true one
         if ((m_distance[0] == m_distance[1]) || (m_distance[0] == m_distance[2])
             || (m_distance[1] == m_distance[2]))
@@ -137,6 +123,7 @@ uint16_t lidar::choose_distance()
 
         }
         else if (abs(m_distance[whichDistanceUpdated] - m_last_choosed_dist) > MAX_DIFF)
+        //else
         {
             return m_distance[whichDistanceUpdated];
         }

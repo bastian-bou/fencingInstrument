@@ -28,7 +28,7 @@
 /** Offset position (minimun and maximum distance) in cm */
 #define OFFSET_POS 30
 
-#define MAX_DIFF  100
+#define MAX_DIFF  50
 
 #define CMD1 A4
 #define CMD2 A5
@@ -63,19 +63,15 @@ public:
     void begin();
 
     /**
-     * @brief Trigger lidar
-     * @return True if the distance is updated since the last call or False if it is not
-    */
-    uint16_t trigger_n_compute();
-
-    /**
      * @brief Get values from lidar
      * @return New distance value or the last saved if it's not computed
     */
     uint16_t get_n_compute();
 
 private:
-
+    const uint8_t TRIGGER_FRAME[4] = {0x5A, 0x04, 0x04, 0x62};
+    const uint8_t SAVE_FRAME[4] = {0x5A, 0x04, 0x11, 0x6F};
+    const uint8_t SAVE_SUCCEED_FRAME[5] = {0x5A, 0x05, 0x11, 0x00, 0x6F};
     uint16_t m_framerate;
 
     /**

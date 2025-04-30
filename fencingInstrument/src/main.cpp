@@ -15,8 +15,6 @@
 
 lidar sensors(100);
 
-//LedStatus ledBoard(LED_BUILTIN);
-
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -41,22 +39,12 @@ void setup()
 
 void loop()
 {
-  
-  //ledBoard.updateStatus();
   // Wait some time before taking the next measurement. Match this with your frame rate.
   uint16_t newDistance = sensors.get_n_compute();
   if (newDistance != UINT16_MAX) {
     play_note(newDistance);
   }
-  Serial.println("");
-  delay(10);
-
-
-  /*if (measurement.temperature > 70) {
-    ledBoard.setRowDurationError(error_type::LIDAR_TEMP_TOO_HIGH);
-  } else {
-    ledBoard.setRowDurationError(error_type::NO_ERROR);
-  }*/
+  delay(20);
 }
 
 void play_note(uint16_t newDistance)
