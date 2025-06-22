@@ -3600,7 +3600,6 @@
 	)
 	(label "TX_TF2"
 		(at 35.56 99.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3611,7 +3610,6 @@
 	)
 	(label "RX_TF3"
 		(at 99.06 86.36 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3622,7 +3620,6 @@
 	)
 	(label "CMD_2"
 		(at 116.84 95.25 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3633,7 +3630,6 @@
 	)
 	(label "TX_TF3"
 		(at 35.56 123.19 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3644,7 +3640,6 @@
 	)
 	(label "CMD_2"
 		(at 116.84 127 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3655,7 +3650,6 @@
 	)
 	(label "TX_TF2"
 		(at 99.06 114.3 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3666,7 +3660,6 @@
 	)
 	(label "CMD_1"
 		(at 204.47 106.68 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3677,7 +3670,6 @@
 	)
 	(label "TX_TF1"
 		(at 99.06 110.49 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3688,7 +3680,6 @@
 	)
 	(label "CMD_1"
 		(at 111.76 95.25 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3699,7 +3690,6 @@
 	)
 	(label "RX_TF3"
 		(at 35.56 120.65 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3710,7 +3700,6 @@
 	)
 	(label "RX_TF2"
 		(at 99.06 82.55 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3721,7 +3710,6 @@
 	)
 	(label "TX"
 		(at 166.37 100.33 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3732,7 +3720,6 @@
 	)
 	(label "RX_TF1"
 		(at 35.56 73.66 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3743,7 +3730,6 @@
 	)
 	(label "RX"
 		(at 251.46 124.46 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3754,7 +3740,6 @@
 	)
 	(label "RX"
 		(at 166.37 95.25 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3765,7 +3750,6 @@
 	)
 	(label "TX"
 		(at 251.46 121.92 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3776,7 +3760,6 @@
 	)
 	(label "TX_TF3"
 		(at 99.06 118.11 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3787,7 +3770,6 @@
 	)
 	(label "RX_TF1"
 		(at 99.06 78.74 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3798,7 +3780,6 @@
 	)
 	(label "CMD_2"
 		(at 204.47 109.22 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3809,7 +3790,6 @@
 	)
 	(label "CMD_1"
 		(at 111.76 127 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3820,7 +3800,6 @@
 	)
 	(label "RX_TF2"
 		(at 35.56 96.52 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3831,7 +3810,6 @@
 	)
 	(label "TX_TF1"
 		(at 35.56 76.2 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4807,7 +4785,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+		(property "Footprint" "Connector_Wire:SolderWire-0.1sqmm_1x04_P3.6mm_D0.4mm_OD1mm_Relief"
 			(at 25.4 93.98 0)
 			(effects
 				(font
@@ -4880,7 +4858,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+		(property "Footprint" "Connector_Wire:SolderWire-0.1sqmm_1x04_P3.6mm_D0.4mm_OD1mm_Relief"
 			(at 25.4 118.11 0)
 			(effects
 				(font
@@ -5114,7 +5092,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+		(property "Footprint" "Connector_Wire:SolderWire-0.1sqmm_1x04_P3.6mm_D0.4mm_OD1mm_Relief"
 			(at 25.4 71.12 0)
 			(effects
 				(font
@@ -5730,28 +5708,28 @@
 			)
 		)
 		(pin "8"
-			(uuid "84352322-61d4-4f23-a717-9dce75be2855")
+			(uuid "84352322-61d4-4f23-a717-9dce75be2856")
 		)
 		(pin "1"
-			(uuid "89cce32d-4ffc-4e8e-8d1e-4aad38eff560")
+			(uuid "89cce32d-4ffc-4e8e-8d1e-4aad38eff561")
 		)
 		(pin "7"
-			(uuid "7425f537-3107-409e-aff0-46d76d2e3525")
+			(uuid "7425f537-3107-409e-aff0-46d76d2e3526")
 		)
 		(pin "4"
-			(uuid "cad6458a-501e-4977-999b-f56535e39f9b")
+			(uuid "cad6458a-501e-4977-999b-f56535e39f9c")
 		)
 		(pin "5"
-			(uuid "fb68201c-d30d-498a-a64b-9150289cb46b")
+			(uuid "fb68201c-d30d-498a-a64b-9150289cb46c")
 		)
 		(pin "6"
-			(uuid "d7ab4bbb-d61e-4493-9113-c42678371444")
+			(uuid "d7ab4bbb-d61e-4493-9113-c42678371445")
 		)
 		(pin "3"
-			(uuid "45a5de4a-c0f4-40f1-a982-f0a7d9aedecd")
+			(uuid "45a5de4a-c0f4-40f1-a982-f0a7d9aedece")
 		)
 		(pin "2"
-			(uuid "5ad9f42c-273e-4294-a497-874bb6637461")
+			(uuid "5ad9f42c-273e-4294-a497-874bb6637462")
 		)
 		(instances
 			(project "interface"
@@ -6212,28 +6190,28 @@
 			)
 		)
 		(pin "8"
-			(uuid "a965efe8-131e-44c2-b4b2-ff78e154155e")
+			(uuid "a965efe8-131e-44c2-b4b2-ff78e154155f")
 		)
 		(pin "3"
-			(uuid "270ea8a9-b030-4539-9430-f7acd6e8d5ef")
+			(uuid "270ea8a9-b030-4539-9430-f7acd6e8d5f0")
 		)
 		(pin "2"
-			(uuid "c7a77c71-f789-4c5b-9526-38743e52980c")
+			(uuid "c7a77c71-f789-4c5b-9526-38743e52980d")
 		)
 		(pin "5"
-			(uuid "c955b1f4-03d5-47cf-b113-ac9c5ed896ee")
+			(uuid "c955b1f4-03d5-47cf-b113-ac9c5ed896ef")
 		)
 		(pin "7"
-			(uuid "bcc8caeb-19f5-4235-ba3b-04814f93234b")
+			(uuid "bcc8caeb-19f5-4235-ba3b-04814f93234c")
 		)
 		(pin "4"
-			(uuid "13c8ed60-a3c1-4eb6-b8a5-aec972aa1e90")
+			(uuid "13c8ed60-a3c1-4eb6-b8a5-aec972aa1e91")
 		)
 		(pin "6"
-			(uuid "82dbbde3-1098-4a02-adf3-49e8887edd0c")
+			(uuid "82dbbde3-1098-4a02-adf3-49e8887edd0d")
 		)
 		(pin "1"
-			(uuid "4e1cde0c-bcef-4d6c-af63-e6545e7c91fd")
+			(uuid "4e1cde0c-bcef-4d6c-af63-e6545e7c91fe")
 		)
 		(instances
 			(project "interface"
